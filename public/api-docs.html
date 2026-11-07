@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WorkoutQuest API - Swagger</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+  <style>
+    body { margin: 0; }
+    .back { padding: 0.6rem 1rem; font: 0.95rem system-ui, sans-serif; background: #17261f; }
+    .back a { color: #e8efe9; margin-right: 1.2rem; }
+    .site-footer { padding: 1.5rem 1rem; text-align: center; font: 0.85rem system-ui, sans-serif; color: #5b6b63; border-top: 1px solid #d5dad2; }
+  </style>
+</head>
+<body>
+  <div class="back"><a href="/">Back to the app</a><a href="/auth/github">Sign in with GitHub</a><a href="/docs">GraphQL guide</a></div>
+  <div id="swagger-ui"></div>
+  <footer class="site-footer">&copy; 2026 CSE 341 Taw Naylor. All rights reserved.</footer>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    window.addEventListener('load', function () {
+      window.ui = SwaggerUIBundle({
+        url: '/openapi.json',
+        dom_id: '#swagger-ui',
+        persistAuthorization: true,
+        requestInterceptor: function (request) {
+          request.credentials = 'same-origin';
+          return request;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WorkoutQuest</title>
+  <meta name="description" content="Log workouts, finish them for XP, and level up.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="top">
+    <a class="wordmark" href="/">WorkoutQuest</a>
+    <nav aria-label="Developer links">
+      <a href="/docs">API docs</a>
+      <a href="/api-docs">Swagger</a>
+      <a href="/graphql">GraphQL endpoint</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <aside id="player-panel" class="panel" aria-label="Your progress"></aside>
+
+    <section class="board" aria-labelledby="board-title">
+      <div class="board-head">
+        <h1 id="board-title">Workout log</h1>
+        <div class="controls">
+          <label class="field-inline">Type
+            <select id="filter-type">
+              <option value="">All types</option>
+              <option value="STRENGTH">Strength</option>
+              <option value="CARDIO">Cardio</option>
+              <option value="MOBILITY">Mobility</option>
+            </select>
+          </label>
+          <label class="field-inline">Status
+            <select id="filter-status">
+              <option value="">All</option>
+              <option value="open">To do</option>
+              <option value="done">Completed</option>
+            </select>
+          </label>
+          <button id="new-workout" class="btn primary" type="button" hidden>New workout</button>
+        </div>
+      </div>
+      <div id="workout-list" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <dialog id="workout-dialog" aria-labelledby="dialog-title">
+    <form id="workout-form" method="dialog" novalidate>
+      <h2 id="dialog-title">New workout</h2>
+      <div id="form-errors" class="form-errors" role="alert" hidden></div>
+
+      <label class="field">Name
+        <input name="name" required maxlength="100" autocomplete="off">
+      </label>
+      <label class="field">Type
+        <select name="type">
+          <option value="STRENGTH">Strength</option>
+          <option value="CARDIO">Cardio</option>
+          <option value="MOBILITY">Mobility</option>
+        </select>
+      </label>
+      <div class="field-row">
+        <label class="field">Difficulty (1-10)
+          <input name="difficulty" type="number" min="1" max="10" value="5" required>
+        </label>
+        <label class="field">Minutes
+          <input name="durationMinutes" type="number" min="1" max="300" value="30" required>
+        </label>
+        <label class="field">XP reward
+          <input name="xpReward" type="number" min="0" max="10000" value="100" required>
+        </label>
+      </div>
+
+      <fieldset class="exercises">
+        <legend>Exercises</legend>
+        <div id="exercise-rows"></div>
+        <button id="add-exercise" class="btn quiet" type="button">Add exercise</button>
+      </fieldset>
+
+      <div class="dialog-actions">
+        <button id="cancel-form" class="btn quiet" type="button">Cancel</button>
+        <button id="save-workout" class="btn primary" type="submit">Save workout</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="site-footer">&copy; 2026 CSE 341 Taw Naylor. All rights reserved.</footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

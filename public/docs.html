@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WorkoutQuest API docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Public+Sans:wght@400;500;600&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .doc { max-width: 860px; margin: 0 auto; padding: 2rem clamp(1rem, 4vw, 2.5rem) 5rem; }
+    .doc h1 { font-size: clamp(2.6rem, 6vw, 4rem); margin-bottom: 0.5rem; }
+    .doc h2 { font-size: 2.1rem; margin: 2.8rem 0 0.6rem; padding-top: 1rem; border-top: 1px solid var(--ink); }
+    .doc h3 { font-size: 1.5rem; margin: 1.6rem 0 0.3rem; }
+    .doc p, .doc li { max-width: 68ch; }
+    pre, code { font-family: "Source Code Pro", ui-monospace, monospace; font-size: 0.86rem; }
+    pre { background: var(--ink); color: #e8efe9; padding: 1rem; border-radius: var(--radius); overflow-x: auto; }
+    :not(pre) > code { background: #e4e9e1; padding: 0.1rem 0.3rem; border-radius: 3px; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.92rem; margin: 0.8rem 0; }
+    th, td { text-align: left; padding: 0.45rem 0.6rem; border-top: 1px solid var(--line); vertical-align: top; }
+    th { border-top-color: var(--ink); font-weight: 600; }
+    .op { padding: 0.8rem 0; border-top: 1px solid var(--line); }
+    .op .sig { font-family: "Source Code Pro", monospace; font-size: 0.92rem; font-weight: 600; word-break: break-word; }
+    .op p { margin: 0.25rem 0 0; color: var(--muted); }
+    .console textarea { width: 100%; min-height: 9rem; font: 0.86rem "Source Code Pro", monospace; padding: 0.7rem; border: 1px solid #b9c1b8; border-radius: var(--radius); }
+    .console label { display: block; font-size: 0.9rem; color: var(--muted); margin: 0.6rem 0 0.2rem; }
+    .toc { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="wordmark" href="/">WorkoutQuest</a>
+    <nav aria-label="Primary"><a href="/">Back to the app</a> <a href="/api-docs">Swagger</a></nav>
+  </header>
+
+  <main class="doc">
+    <h1>WorkoutQuest API</h1>
+    <p>A GraphQL API for tracking workouts and player progress. Everyone can read data. Signed-in players can create, change, and delete their own data. Every request goes to one endpoint.</p>
+    <ul class="toc">
+      <li><a href="#start">Quick start</a></li>
+      <li><a href="#auth">Authentication</a></li>
+      <li><a href="#errors">Errors</a></li>
+      <li><a href="#examples">Examples</a></li>
+      <li><a href="#reference">Schema reference</a></li>
+      <li><a href="#console">Try it</a></li>
+    </ul>
+
+    <h2 id="start">Quick start</h2>
+    <p>Send a <code>POST</code> to <code>/graphql</code> with a JSON body containing <code>query</code> and, optionally, <code>variables</code>. Reads need no sign-in:</p>
+<pre>curl -X POST "$BASE_URL/graphql" \
+  -H "content-type: application/json" \
+  -d '{"query":"{ workouts { id name type xpReward } }"}'</pre>
+    <table>
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td>Endpoint</td><td><code>POST /graphql</code> (also serves an interactive explorer on <code>GET</code> in a browser)</td></tr>
+      <tr><td>Content type</td><td><code>application/json</code></td></tr>
+      <tr><td>Collections</td><td><code>players</code> (9 fields) and <code>workouts</code> (9 fields) in MongoDB</td></tr>
+      <tr><td>Health check</td><td><code>GET /health</code></td></tr>
+    </table>
+
+    <h2 id="auth">Authentication</h2>
+    <p>Sign-in uses GitHub OAuth and a server-side session cookie. All mutations require it; queries do not.</p>
+    <table>
+      <tr><th>Route</th><th>Purpose</th></tr>
+      <tr><td><code>GET /auth/github</code></td><td>Start sign-in. Redirects to GitHub. Returns <code>503</code> with a <code>missingVariables</code> list if OAuth is not configured on the server.</td></tr>
+      <tr><td><code>GET /auth/github/callback</code></td><td>GitHub redirects back here. Creates the player on first sign-in, starts the session, and redirects to <code>/</code>.</td></tr>
+      <tr><td><code>GET /auth/me</code></td><td>Returns the signed-in player, or <code>401</code>.</td></tr>
+      <tr><td><code>POST /auth/logout</code></td><td>Ends the session.</td></tr>
+    </table>
+    <p>To call mutations from a browser, sign in at <code>/auth/github</code> on the same origin, then use the console below or the app. From scripts, reuse the <code>workoutquest.sid</code> cookie from a signed-in browser.</p>
+    <p>Ownership rules: you can change or delete only your own workouts. You can change or delete a player profile only if it is yours or you created it. Completing a workout awards its XP to you once; level is <code>floor(totalXp / 500) + 1</code>. A player's <code>email</code> is returned only to that player.</p>
+
+    <h2 id="errors">Errors</h2>
+    <p>Failures come back in the standard GraphQL <code>errors</code> array. Branch on <code>extensions.code</code>, not on the message text.</p>
+    <table>
+      <tr><th>Code</th><th>Meaning</th></tr>
+      <tr><td><code>BAD_USER_INPUT</code></td><td>Validation failed or an id is malformed. <code>extensions.errors</code> lists each failing <code>field</code> and <code>message</code>.</td></tr>
+      <tr><td><code>UNAUTHENTICATED</code></td><td>The operation needs a signed-in player.</td></tr>
+      <tr><td><code>FORBIDDEN</code></td><td>The record exists but belongs to someone else.</td></tr>
+      <tr><td><code>NOT_FOUND</code></td><td>No record with that id.</td></tr>
+      <tr><td><code>CONFLICT</code></td><td>Duplicate username or email, or the workout is already completed.</td></tr>
+      <tr><td><code>INTERNAL_SERVER_ERROR</code></td><td>Unexpected failure. Details are logged on the server, never returned.</td></tr>
+    </table>
+<pre>{
+  "errors": [{
+    "message": "Validation failed",
+    "extensions": {
+      "code": "BAD_USER_INPUT",
+      "errors": [{ "field": "difficulty", "message": "difficulty must be 1-10" }]
+    }
+  }]
+}</pre>
+    <h3>Validation rules</h3>
+    <table>
+      <tr><th>Field</th><th>Rule</th></tr>
+      <tr><td>Workout <code>name</code></td><td>Required, trimmed, up to 100 characters</td></tr>
+      <tr><td><code>difficulty</code></td><td>Whole number, 1 to 10</td></tr>
+      <tr><td><code>durationMinutes</code></td><td>Whole number, 1 to 300</td></tr>
+      <tr><td><code>xpReward</code></td><td>Whole number, 0 to 10000</td></tr>
+      <tr><td><code>exercises</code></td><td>Up to 50. Each needs a name (up to 80 characters), sets (1 to 100), and reps (1 to 1000)</td></tr>
+      <tr><td>Player <code>username</code></td><td>3 to 30 characters: letters, numbers, <code>_</code>, <code>-</code></td></tr>
+      <tr><td><code>displayName</code></td><td>Required, up to 60 characters</td></tr>
+      <tr><td><code>email</code></td><td>Valid email, stored lowercase</td></tr>
+      <tr><td><code>avatarUrl</code></td><td>Optional, must be a URL</td></tr>
+    </table>
+
+    <h2 id="examples">Examples</h2>
+    <p>The four REST verbs map to GraphQL like this: GET is a query, POST is a <code>create…</code> mutation, PUT is an <code>update…</code> mutation (replaces all fields), and DELETE is a <code>delete…</code> mutation.</p>
+    <h3>Read (GET)</h3>
+<pre>query {
+  workouts(type: STRENGTH, completed: false) {
+    id name difficulty durationMinutes xpReward
+    exercises { name sets reps }
+    player { username }
+  }
+}</pre>
+    <h3>Create (POST)</h3>
+<pre>mutation {
+  createWorkout(input: {
+    name: "Leg Day", type: STRENGTH, difficulty: 7,
+    durationMinutes: 50, xpReward: 220,
+    exercises: [{ name: "Squats", sets: 4, reps: 10 }]
+  }) { id name }
+}</pre>
+    <h3>Replace (PUT)</h3>
+<pre>mutation {
+  updateWorkout(id: "WORKOUT_ID", input: {
+    name: "Leg Day", type: STRENGTH, difficulty: 8,
+    durationMinutes: 55, xpReward: 250
+  }) { id difficulty }
+}</pre>
+    <h3>Complete and earn XP</h3>
+<pre>mutation { completeWorkout(id: "WORKOUT_ID") { id completed completedAt } }</pre>
+    <h3>Delete (DELETE)</h3>
+<pre>mutation { deleteWorkout(id: "WORKOUT_ID") { id deleted } }</pre>
+
+    <h2 id="reference">Schema reference</h2>
+    <p>Generated from the live schema, so it always matches the running API.</p>
+    <div id="reference-body" aria-live="polite">Loading the schema…</div>
+
+    <h2 id="console">Try it</h2>
+    <p>This console runs against this server with your current session, so mutations work once you have signed in.</p>
+    <div class="console">
+      <label for="console-query">Query</label>
+      <textarea id="console-query" spellcheck="false">{
+  workouts {
+    id
+    name
+    type
+    xpReward
+  }
+}</textarea>
+      <label for="console-vars">Variables (JSON, optional)</label>
+      <textarea id="console-vars" spellcheck="false" style="min-height: 4rem">{}</textarea>
+      <p><button id="console-run" class="btn primary" type="button">Run</button> <a class="btn" href="/auth/github">Sign in with GitHub</a></p>
+      <pre id="console-out" aria-live="polite">Results appear here.</pre>
+    </div>
+  </main>
+  <footer class="site-footer">&copy; 2026 CSE 341 Taw Naylor. All rights reserved.</footer>
+  <script type="module" src="/js/docs.js"></script>
+</body>
+</html>

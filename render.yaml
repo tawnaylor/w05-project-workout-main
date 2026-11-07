@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: w05-project-workout
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: DB_NAME
+        value: workoutquest
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CALLBACK_URL
+        sync: false
